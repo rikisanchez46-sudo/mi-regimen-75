@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#173d32">
+<title>Mi Régimen 75</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--green:#173d32;--mint:#dff2e5;--bg:#f4f7f5;--ink:#18231e;--muted:#65736b;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px system-ui,-apple-system,Segoe UI,sans-serif}
+header{background:var(--green);color:white;padding:24px 18px 28px;border-radius:0 0 24px 24px}
+header small{opacity:.8;letter-spacing:.08em}h1{margin:7px 0;font-size:25px}header p{margin:4px 0;color:#d8e9df}
+main{max-width:720px;margin:auto;padding:16px 14px 90px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:-5px}
+.card{background:white;border-radius:16px;padding:15px;box-shadow:0 2px 10px #14281b0a}
+.metric{font-size:27px;font-weight:750;margin-top:5px}.muted{color:var(--muted);font-size:13px}
+section{margin-top:18px}.section-title{font-size:18px;margin:0 0 10px}
+.progress{height:10px;background:#e6eee8;border-radius:20px;overflow:hidden;margin:10px 0}.bar{height:100%;background:#53a876;width:0%}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+button{border:0;border-radius:12px;background:var(--green);color:white;padding:12px 14px;font-weight:650;font-size:15px;cursor:pointer}
+button.secondary{background:var(--mint);color:var(--green)}button.light{background:#edf2ee;color:var(--green)}
+input,select{width:100%;padding:12px;border:1px solid #d7e0d9;border-radius:10px;font:inherit;background:white}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.tabs{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e1e8e2;display:flex;justify-content:space-around;padding:9px 4px calc(9px + env(safe-area-inset-bottom));z-index:5}
+.tabs button{background:transparent;color:#526158;padding:8px 6px;font-size:12px;flex:1}.tabs button.active{color:var(--green);background:var(--mint)}
+.view{display:none}.view.active{display:block}.meal{padding:12px 0;border-bottom:1px solid #edf1ed}.meal:last-child{border:0}
+.small{font-size:12px}.notice{background:#fff8e7;border:1px solid #f2dfaa;border-radius:12px;padding:12px;font-size:13px;color:#66521d}
+#walkTimer{font-size:36px;font-weight:750;text-align:center;padding:14px}
+canvas{width:100%;height:180px}
+</style>
+</head>
+<body>
+<header>
+  <small>MI OBJETIVO PERSONAL</small>
+  <h1>Mi Régimen 75</h1>
+  <p>Hábitos saludables, paso a paso.</p>
+</header>
+<main>
+<div id="home" class="view active">
+  <div class="grid">
+    <div class="card"><div class="muted">Peso actual</div><div class="metric" id="currentWeight">90 kg</div><div class="muted">Último registro</div></div>
+    <div class="card"><div class="muted">Peso objetivo</div><div class="metric">75 kg</div><div class="muted">Meta inicial</div></div>
+    <div class="card"><div class="muted">Falta para la meta</div><div class="metric" id="remaining">15 kg</div><div class="muted">Progreso gradual</div></div>
+    <div class="card"><div class="muted">Agua de hoy</div><div class="metric" id="waterCount">0 vasos</div><div class="muted">Registro orientativo</div></div>
+  </div>
+  <section class="card">
+    <div class="row"><h2 class="section-title">Tu progreso</h2><span class="muted" id="percent">0%</span></div>
+    <div class="progress"><div class="bar" id="progressBar"></div></div>
+    <div class="muted">Objetivo: pasar de 90 kg a 75 kg. El avance se calcula con tus registros.</div>
+  </section>
+  <section class="card">
+    <h2 class="section-title">Hoy</h2>
+    <div class="row"><div><b>Agua</b><div class="muted">Sumá un vaso cuando tomes.</div></div><button class="secondary" onclick="addWater()">+ 1 vaso</button></div>
+    <div style="height:12px"></div>
+    <div class="row"><div><b>Caminata nocturna</b><div class="muted">Registrá tu actividad.</div></div><button onclick="show('walk')">Empezar</button></div>
+  </section>
+  <section class="notice">La pérdida de peso no es lineal. No hace falta pasar hambre: buscá hábitos sostenibles y consultá a un profesional si tenés una condición médica o síntomas al hacer ejercicio.</section>
+</div>
+
+<div id="weight" class="view">
+  <section class="card">
+    <h2 class="section-title">Registrar peso</h2>
+    <label for="weightInput">Peso de hoy (kg)</label><input id="weightInput" type="number" min="30" max="300" step=".1" placeholder="Ej. 89.5">
+    <label for="waistInput">Cintura (cm), opcional</label><input id="waistInput" type="number" min="30" max="250" step=".1" placeholder="Ej. 100">
+    <div style="height:12px"></div><button onclick="saveWeight()">Guardar registro</button>
+    <p class="muted">Pesate en condiciones parecidas, por ejemplo por la mañana, una vez por semana.</p>
+  </section>
+  <section class="card"><h2 class="section-title">Historial</h2><div id="weightHistory" class="muted">Todavía no hay registros.</div></section>
+</div>
+
+<div id="food" class="view">
+  <section class="card">
+    <h2 class="section-title">Menú orientativo</h2>
+    <div class="meal"><b>Desayuno</b><p class="muted">Café o mate, tostadas y una fruta. Podés sumar yogur o huevo.</p></div>
+    <div class="meal"><b>Almuerzo</b><p class="muted">Pollo, pescado, huevo o carne magra; medio plato de verduras y una porción moderada de arroz, papa o legumbres.</p></div>
+    <div class="meal"><b>Merienda</b><p class="muted">Fruta, yogur natural o una tostada.</p></div>
+    <div class="meal"><b>Cena</b><p class="muted">Verduras con huevo, pollo, pescado o legumbres. Ajustá la cantidad según tu hambre.</p></div>
+  </section>
+  <section class="notice">Este menú es una guía general, no una dieta médica ni una prescripción de calorías. Si tenés enfermedad renal, diabetes u otra condición, conviene personalizarlo con un profesional.</section>
+</div>
+
+<div id="walk" class="view">
+  <section class="card">
+    <h2 class="section-title">Caminata</h2>
+    <div id="walkTimer">00:00:00</div>
+    <div class="actions" style="justify-content:center"><button id="walkStart" onclick="startWalk()">Iniciar</button><button class="secondary" onclick="stopWalk()">Finalizar y guardar</button><button class="light" onclick="resetWalk()">Reiniciar</button></div>
+    <label for="distanceInput">Distancia (km), opcional</label><input id="distanceInput" type="number" min="0" step=".01" placeholder="Ej. 2.5">
+    <p class="muted" id="walkToday">Todavía no registraste caminatas hoy.</p>
+  </section>
+  <section class="card"><h2 class="section-title">Consejos</h2><p class="muted">Empezá con un ritmo cómodo, aumentá gradualmente y elegí un recorrido iluminado y seguro. Detenete si sentís dolor de pecho, mareo o falta de aire inusual.</p></section>
+</div>
+
+<div id="stats" class="view">
+  <section class="card"><h2 class="section-title">Resumen</h2><p id="statsText" class="muted">Registrá tu peso y tus caminatas para ver tu evolución.</p><canvas id="chart" width="600" height="220"></canvas></section>
+</div>
+</main>
+<nav class="tabs">
+<button class="active" data-view="home" onclick="show('home',this)">⌂<br>Inicio</button>
+<button data-view="weight" onclick="show('weight',this)">⚖<br>Peso</button>
+<button data-view="food" onclick="show('food',this)">♧<br>Comidas</button>
+<button data-view="walk" onclick="show('walk',this)">➤<br>Caminar</button>
+<button data-view="stats" onclick="show('stats',this)">▥<br>Progreso</button>
+</nav>
+<script>
+const KEY='miRegimen75Data';
+let data=JSON.parse(localStorage.getItem(KEY)||'{"weights":[],"waterDate":"","water":0,"walks":[]}');
+function persist(){localStorage.setItem(KEY,JSON.stringify(data));render()}
+function today(){return new Date().toLocaleDateString('sv-SE')}
+function show(id,btn){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');else document.querySelector('[data-view="'+id+'"]').classList.add('active');if(id==='stats')drawChart()}
+function current(){return data.weights.length?data.weights[data.weights.length-1].weight:90}
+function addWater(){if(data.waterDate!==today()){data.waterDate=today();data.water=0}data.water++;persist()}
+function saveWeight(){let w=Number(document.getElementById('weightInput').value),wa=Number(document.getElementById('waistInput').value);if(!w||w<30||w>300){alert('Ingresá un peso válido.');return}data.weights.push({date:today(),weight:w,waist:wa||null});persist();document.getElementById('weightInput').value='';document.getElementById('waistInput').value='';alert('Registro guardado en este teléfono.')}
+let seconds=0,interval=null;
+function tick(){seconds++;document.getElementById('walkTimer').textContent=new Date(seconds*1000).toISOString().slice(11,19)}
+function startWalk(){if(interval)return;interval=setInterval(tick,1000);document.getElementById('walkStart').textContent='En curso'}
+function stopWalk(){if(!seconds){alert('Primero iniciá la caminata.');return}if(interval){clearInterval(interval);interval=null}let km=Number(document.getElementById('distanceInput').value)||null;data.walks.push({date:today(),seconds,km});seconds=0;document.getElementById('walkTimer').textContent='00:00:00';document.getElementById('distanceInput').value='';document.getElementById('walkStart').textContent='Iniciar';persist();alert('Caminata guardada.')}
+function resetWalk(){if(interval){clearInterval(interval);interval=null}seconds=0;document.getElementById('walkTimer').textContent='00:00:00';document.getElementById('walkStart').textContent='Iniciar'}
+function render(){let w=current(),left=Math.max(0,w-75),pct=Math.max(0,Math.min(100,(90-w)/15*100));document.getElementById('currentWeight').textContent=w.toFixed(1)+' kg';document.getElementById('remaining').textContent=left.toFixed(1)+' kg';document.getElementById('percent').textContent=pct.toFixed(0)+'%';document.getElementById('progressBar').style.width=pct+'%';if(data.waterDate!==today()){data.waterDate=today();data.water=0}document.getElementById('waterCount').textContent=data.water+' vasos';document.getElementById('weightHistory').innerHTML=data.weights.length?data.weights.slice().reverse().map(x=>`<div class="row" style="padding:8px 0;border-bottom:1px solid #edf1ed"><span>${x.date}${x.waist?' · cintura '+x.waist+' cm':''}</span><b>${x.weight.toFixed(1)} kg</b></div>`).join(''):'Todavía no hay registros.';let walks=data.walks.filter(x=>x.date===today());document.getElementById('walkToday').textContent=walks.length?walks.length+' caminata(s) registrada(s) hoy.':'Todavía no registraste caminatas hoy.';document.getElementById('statsText').textContent=`${data.weights.length} registro(s) de peso · ${data.walks.length} caminata(s) guardada(s).`}
+function drawChart(){let c=document.getElementById('chart'),ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);let arr=data.weights;if(!arr.length){ctx.fillText('Tus registros aparecerán aquí',20,35);return}let vals=arr.map(x=>x.weight),min=Math.min(...vals)-1,max=Math.max(...vals)+1;if(min===max)max=min+2;ctx.beginPath();ctx.strokeStyle='#2f8a59';ctx.lineWidth=4;arr.forEach((p,i)=>{let x=30+(arr.length===1?0:i*(c.width-60)/(arr.length-1)),y=190-(p.weight-min)/(max-min)*150;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.stroke();arr.forEach((p,i)=>{let x=30+(arr.length===1?0:i*(c.width-60)/(arr.length-1)),y=190-(p.weight-min)/(max-min)*150;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle='#173d32';ctx.fill()})}
+render();
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body></html>
